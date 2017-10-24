@@ -31,7 +31,8 @@ def demo():
         print("You might input something wrong")
 
 def generate_numbers():
-    return list(permutations(['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'], 4))
+    digits = [str(x) for x in range(10)]
+    return [''.join(x) for x in permutations(digits, 4)]
 
 def pick_a_number(pool):
     return choice(pool)
