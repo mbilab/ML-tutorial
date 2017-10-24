@@ -37,13 +37,10 @@ class ElapsedTimer(object):
         print("Elapsed: %s " % self.elapsed(time.time() - self.start_time) )
 
 class DCGAN(object):
-    def __init__(self, img_rows=28, img_cols=28, channel=1):
+    def __init__(self, D, G):
 
-        self.img_rows = img_rows
-        self.img_cols = img_cols
-        self.channel = channel
-        self.D = None   # discriminator
-        self.G = None   # generator
+        self.D = D   # discriminator
+        self.G = G   # generator
         self.AM = None  # adversarial model
         self.DM = None  # discriminator model
 
@@ -69,41 +66,58 @@ class DCGAN(object):
         self.G.summary()
         return self.G
 
-    def discriminator_model(self):
+    def discriminator_model(self, exe=False):
         if self.DM:
             return self.DM
         optimizer = RMSprop(lr=0.0002, decay=6e-8)
         #optimizer = Adam(lr=0.0002, decay=6e-8)
         self.DM = Sequential()
-        self.DM.add(self.discriminator())
+
+        if exe==False:
+            self.DM.add(self.discriminator())
+        else:
+            self.DM.add(self.D)
+
         self.DM.compile(loss='binary_crossentropy', optimizer=optimizer,\
             metrics=['accuracy'])
         return self.DM
 
-    def adversarial_model(self):
+    def adversarial_model(self, exe=False):
         if self.AM:
             return self.AM
         optimizer = RMSprop(lr=0.0001, decay=3e-8)
         #optimizer = Adam(lr=0.0001, decay=3e-8)
         self.AM = Sequential()
-        self.AM.add(self.generator())
-        self.AM.add(self.discriminator())
+        if exe==False:
+            self.AM.add(self.generator())
+            self.AM.add(self.discriminator())
+        else:
+            self.AM.add(self.G)
+            self.AM.add(self.D)
         self.AM.compile(loss='binary_crossentropy', optimizer=optimizer,\
             metrics=['accuracy'])
         return self.AM
 
 class MNIST_DCGAN(object):
-    def __init__(self):
-        self.img_rows = 28
-        self.img_cols = 28
-        self.channel = 1
+    def __init__(self, D=None, G=None):
 
         self.x_train = input_data.read_data_sets("mnist",\
         	one_hot=True).train.images
-        self.DCGAN = DCGAN()
-        self.discriminator =  self.DCGAN.discriminator_model()
-        self.adversarial = self.DCGAN.adversarial_model()
-        self.generator = self.DCGAN.generator()
+        self.DCGAN = DCGAN(D, G)
+
+        if D==None:
+            self.discriminator =  self.DCGAN.discriminator_model()
+        else:
+            self.discriminator =  self.DCGAN.discriminator_model(exe=True)
+
+        if G==None:
+            self.generator = self.DCGAN.generator()
+            self.adversarial = self.DCGAN.adversarial_model()
+        else:
+            self.generator = G
+            self.adversarial = self.DCGAN.adversarial_model(exe=True)
+
+
 
     def train(self, train_steps=2000, batch_size=256, save_interval=0):
         noise_input = None
@@ -148,7 +162,7 @@ class MNIST_DCGAN(object):
         for i in range(images.shape[0]):
             plt.subplot(4, 4, i+1)
             image = images[i, :, :, :]
-            image = np.reshape(image, [self.img_rows, self.img_cols])
+            image = np.reshape(image, [28, 28])
             plt.imshow(image, cmap='gray')
             plt.axis('off')
         plt.tight_layout()
@@ -158,10 +172,22 @@ class MNIST_DCGAN(object):
         else:
             plt.show()
 
-if __name__ == '__main__':
+def demo():
     mnist_dcgan = MNIST_DCGAN()
     timer = ElapsedTimer()
-    mnist_dcgan.train(train_steps=100000, batch_size=256, save_interval=1000)
+    mnist_dcgan.train(train_steps=1000, batch_size=256, save_interval=100)
     timer.elapsed_time()
     mnist_dcgan.plot_images(fake=True)
     mnist_dcgan.plot_images(fake=False, save2file=True)
+
+def exe(dis, gen, steps=20000, save=1000):
+    mnist_dcgan = MNIST_DCGAN(D=dis, G=gen)
+    timer = ElapsedTimer()
+    mnist_dcgan.train(train_steps=steps, batch_size=256, save_interval=save)
+    timer.elapsed_time()
+    mnist_dcgan.plot_images(fake=True)
+    mnist_dcgan.plot_images(fake=False, save2file=True)
+
+
+if __name__ == '__main__':
+    demo()
