@@ -52,32 +52,9 @@ class DCGAN(object):
         if self.D:
             return self.D
         self.D = Sequential()
-        depth = 64
-        dropout = 0.4
-        # In: 28 x 28 x 1, depth = 1
-        # Out: 14 x 14 x 1, depth=64
-        input_shape = (self.img_rows, self.img_cols, self.channel)
-        self.D.add(Conv2D(depth*2, 5, strides=2, input_shape=input_shape,\
-            padding='same'))
-        self.D.add(LeakyReLU(alpha=0.2))
-        self.D.add(Dropout(dropout))
-
-        self.D.add(Conv2D(depth*2, 5, strides=2, padding='same'))
-        self.D.add(LeakyReLU(alpha=0.2))
-        self.D.add(Dropout(dropout))
-
-        self.D.add(Conv2D(depth*1, 5, strides=2, padding='same'))
-        self.D.add(LeakyReLU(alpha=0.2))
-        self.D.add(Dropout(dropout))
-
-        self.D.add(Conv2D(depth*1, 5, strides=1, padding='same'))
-        self.D.add(LeakyReLU(alpha=0.2))
-        self.D.add(Dropout(dropout))
-
-        # Out: 1-dim probability
-        self.D.add(Flatten())
-        self.D.add(Dense(1))
-        self.D.add(Activation('sigmoid'))
+        self.D.add(Dense(256, input_shape = (784, ), activation = 'relu'))
+        self.D.add(Dropout(0.4))
+        self.D.add(Dense(1, activation = 'sigmoid'))
         self.D.summary()
         return self.D
 
@@ -85,36 +62,10 @@ class DCGAN(object):
         if self.G:
             return self.G
         self.G = Sequential()
-        dropout = 0.4
-        depth = 64+64+64+64
-        dim = 7
-        # In: 100
-        # Out: dim x dim x depth
-        self.G.add(Dense(dim*dim*depth, input_dim=100))
+        self.G.add(Dense(512, input_dim=100, activation = 'relu'))
         self.G.add(BatchNormalization(momentum=0.9))
-        self.G.add(Activation('relu'))
-        self.G.add(Reshape((dim, dim, depth)))
-        self.G.add(Dropout(dropout))
-
-        # In: dim x dim x depth
-        # Out: 2*dim x 2*dim x depth/2
-        self.G.add(UpSampling2D())
-        self.G.add(Conv2DTranspose(int(depth/2), 5, padding='same'))
-        self.G.add(BatchNormalization(momentum=0.9))
-        self.G.add(Activation('relu'))
-
-        self.G.add(UpSampling2D())
-        self.G.add(Conv2DTranspose(int(depth/4), 5, padding='same'))
-        self.G.add(BatchNormalization(momentum=0.9))
-        self.G.add(Activation('relu'))
-
-        self.G.add(Conv2DTranspose(int(depth/8), 5, padding='same'))
-        self.G.add(BatchNormalization(momentum=0.9))
-        self.G.add(Activation('relu'))
-
-        # Out: 28 x 28 x 1 grayscale image [0.0,1.0] per pix
-        self.G.add(Conv2DTranspose(1, 5, padding='same'))
-        self.G.add(Activation('sigmoid'))
+        self.G.add(Dropout(0.4))
+        self.G.add(Dense(784, activation = 'sigmoid'))
         self.G.summary()
         return self.G
 
@@ -149,9 +100,6 @@ class MNIST_DCGAN(object):
 
         self.x_train = input_data.read_data_sets("mnist",\
         	one_hot=True).train.images
-        self.x_train = self.x_train.reshape(-1, self.img_rows,\
-        	self.img_cols, 1).astype(np.float32)
-        a = self.x_train[[0 ,1], :, :, :]
         self.DCGAN = DCGAN()
         self.discriminator =  self.DCGAN.discriminator_model()
         self.adversarial = self.DCGAN.adversarial_model()
@@ -163,7 +111,7 @@ class MNIST_DCGAN(object):
             noise_input = np.random.uniform(-1.0, 1.0, size=[16, 100])
         for i in range(train_steps):
             images_train = self.x_train[np.random.randint(0,
-                self.x_train.shape[0], size=batch_size), :, :, :]
+                self.x_train.shape[0], size=batch_size), :]
             noise = np.random.uniform(-1.0, 1.0, size=[batch_size, 100])
             images_fake = self.generator.predict(noise)
             x = np.concatenate((images_train, images_fake))
@@ -185,16 +133,16 @@ class MNIST_DCGAN(object):
                         noise=noise_input, step=(i+1))
 
     def plot_images(self, save2file=False, fake=True, samples=16, noise=None, step=0):
-        filename = './ls_output/mnist.png'
+        filename = './gan_tutor_output/mnist.png'
         if fake:
             if noise is None:
                 noise = np.random.uniform(-1.0, 1.0, size=[samples, 100])
             else:
-                filename = "./ls_output/mnist_%d.png" % step
-            images = self.generator.predict(noise)
+                filename = "./gan_tutor_output/mnist_%d.png" % step
+            images = self.generator.predict(noise).reshape(-1, 28, 28, 1)
         else:
             i = np.random.randint(0, self.x_train.shape[0], samples)
-            images = self.x_train[i, :, :, :]
+            images = self.x_train[i, :].reshape(-1, 28, 28, 1)
 
         plt.figure(figsize=(10,10))
         for i in range(images.shape[0]):
@@ -213,7 +161,7 @@ class MNIST_DCGAN(object):
 if __name__ == '__main__':
     mnist_dcgan = MNIST_DCGAN()
     timer = ElapsedTimer()
-    mnist_dcgan.train(train_steps=1000, batch_size=256, save_interval=50)
+    mnist_dcgan.train(train_steps=100000, batch_size=256, save_interval=1000)
     timer.elapsed_time()
     mnist_dcgan.plot_images(fake=True)
     mnist_dcgan.plot_images(fake=False, save2file=True)
