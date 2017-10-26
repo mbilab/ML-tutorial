@@ -14,14 +14,14 @@ class SimpleNN():
     def add_layer(self, units, activation = None):
         self.layers.append(Dense(units, input_dim = 784, activation = activation))
 
-    def train(self, steps):
+    def train(self, steps, optimizer = 'Adam'):
         if len(self.layers) == 0:
             self.model.add(Dense(10))
         else:
             for l in self.layers:
                 self.model.add(l)
 
-        self.model.compile(loss = 'categorical_crossentropy', optimizer = 'Adam', metrics = ['accuracy'])
+        self.model.compile(loss = 'categorical_crossentropy', optimizer = optimizer, metrics = ['accuracy'])
         self.model.summary()
         for step in range(1, steps + 1):
             data = dataset.train.next_batch(128)
