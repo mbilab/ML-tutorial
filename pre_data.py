@@ -25,7 +25,7 @@ def portion(data):
 def get_data(num):
     if num > 900:
         num = 900
-    pos, neg = readfile('/data/german_credit.csv')
+    pos, neg = readfile('data/german_credit.csv')
     #np.random.shuffle(pos)
     #np.random.shuffle(neg)
     #train500_pos = pos[:int(len(pos) * 0.5)]
