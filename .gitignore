@@ -1,3 +1,5 @@
 .ipynb_checkpoints/
 __pycache__/
 GAN/*.png
+gan/output
+gan/good_output
