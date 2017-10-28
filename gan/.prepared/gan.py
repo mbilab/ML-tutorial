@@ -15,7 +15,7 @@ matplotlib.use('Agg')
 
 from tensorflow.examples.tutorials.mnist import input_data
 
-from keras.models import Sequential
+from keras.models import Sequential, load_model
 from keras.layers import Dense, Activation, Flatten, Reshape
 from keras.layers import Conv2D, Conv2DTranspose, UpSampling2D
 from keras.layers import LeakyReLU, Dropout
@@ -122,8 +122,6 @@ class MNIST_DCGAN(object):
 
     def train(self, output, train_steps=2000, batch_size=256, save_interval=0):
 
-        if not os.path.exists(output):
-           os.makedirs(output)
 
         noise_input = None
         if save_interval>0:
@@ -153,6 +151,9 @@ class MNIST_DCGAN(object):
 
     def plot_images(self, output, save2file=False, fake=True, samples=16, noise=None, step=0):
 
+        if not os.path.exists(output):
+           os.makedirs(output)
+
         filename = output+ '/mnist.png'
         if fake:
             if noise is None:
@@ -179,13 +180,28 @@ class MNIST_DCGAN(object):
             plt.show()
 
 def demo():
-    mnist_dcgan = MNIST_DCGAN()
-    timer = ElapsedTimer()
-    file_name = './good_output'
-    mnist_dcgan.train(train_steps=1000, batch_size=256, save_interval=100, output=file_name)
-    timer.elapsed_time()
-    mnist_dcgan.plot_images(fake=True, output=file_name)
-    mnist_dcgan.plot_images(fake=False, save2file=True, output=file_name)
+    model = load_model('./.prepared/model.h5')
+    folder = './good_output'
+    if not os.path.exists(folder):
+        os.makedirs(folder)
+
+    for i in range(10):
+        file_name = folder + '/minist_%d.png' % i
+        noise = np.random.uniform(-1.0, 1.0, size=[16, 100])
+        images = model.predict(noise).reshape(-1, 28, 28, 1)
+        plt.figure(figsize=(10,10))
+        for i in range(images.shape[0]):
+            plt.subplot(4, 4, i+1)
+            image = images[i, :, :, :]
+            image = np.reshape(image, [28, 28])
+            plt.imshow(image, cmap='gray')
+            plt.axis('off')
+        plt.tight_layout()
+        plt.savefig(file_name)
+        plt.close('all')
+
+    print('Output Image Saved!')
+
 
 def exe(dis, gen, steps=20000, save=1000):
     mnist_dcgan = MNIST_DCGAN(D=dis, G=gen)
