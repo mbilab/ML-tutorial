@@ -8,6 +8,7 @@ Usage: python3 dcgan_mnist.py
 
 import numpy as np
 import time
+import os
 
 import matplotlib
 matplotlib.use('Agg')
@@ -119,7 +120,11 @@ class MNIST_DCGAN(object):
 
 
 
-    def train(self, train_steps=2000, batch_size=256, save_interval=0):
+    def train(self, output, train_steps=2000, batch_size=256, save_interval=0):
+
+        if not os.path.exists(output):
+           os.makedirs(output)
+
         noise_input = None
         if save_interval>0:
             noise_input = np.random.uniform(-1.0, 1.0, size=[16, 100])
@@ -143,16 +148,17 @@ class MNIST_DCGAN(object):
             print(log_mesg)
             if save_interval>0:
                 if (i+1)%save_interval==0:
-                    self.plot_images(save2file=True, samples=noise_input.shape[0],\
+                    self.plot_images(output, save2file=True, samples=noise_input.shape[0],\
                         noise=noise_input, step=(i+1))
 
-    def plot_images(self, save2file=False, fake=True, samples=16, noise=None, step=0):
-        filename = './gan_tutor_output/mnist.png'
+    def plot_images(self, output, save2file=False, fake=True, samples=16, noise=None, step=0):
+
+        filename = output+ '/mnist.png'
         if fake:
             if noise is None:
                 noise = np.random.uniform(-1.0, 1.0, size=[samples, 100])
             else:
-                filename = "./gan_tutor_output/mnist_%d.png" % step
+                filename = output + "/mnist_%d.png" % step
             images = self.generator.predict(noise).reshape(-1, 28, 28, 1)
         else:
             i = np.random.randint(0, self.x_train.shape[0], samples)
@@ -175,18 +181,20 @@ class MNIST_DCGAN(object):
 def demo():
     mnist_dcgan = MNIST_DCGAN()
     timer = ElapsedTimer()
-    mnist_dcgan.train(train_steps=1000, batch_size=256, save_interval=100)
+    file_name = './good_output'
+    mnist_dcgan.train(train_steps=1000, batch_size=256, save_interval=100, output=file_name)
     timer.elapsed_time()
-    mnist_dcgan.plot_images(fake=True)
-    mnist_dcgan.plot_images(fake=False, save2file=True)
+    mnist_dcgan.plot_images(fake=True, output=file_name)
+    mnist_dcgan.plot_images(fake=False, save2file=True, output=file_name)
 
 def exe(dis, gen, steps=20000, save=1000):
     mnist_dcgan = MNIST_DCGAN(D=dis, G=gen)
     timer = ElapsedTimer()
-    mnist_dcgan.train(train_steps=steps, batch_size=256, save_interval=save)
+    file_name = './output'
+    mnist_dcgan.train(train_steps=steps, batch_size=256, save_interval=save, output=file_name)
     timer.elapsed_time()
-    mnist_dcgan.plot_images(fake=True)
-    mnist_dcgan.plot_images(fake=False, save2file=True)
+    mnist_dcgan.plot_images(fake=True, output=file_name)
+    mnist_dcgan.plot_images(fake=False, save2file=True, output=file_name)
 
 
 if __name__ == '__main__':
