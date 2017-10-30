@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+import matplotlib.image as mpimg
 import numpy as np
 
 from tensorflow.examples.tutorials.mnist import input_data
@@ -15,6 +16,21 @@ def get_train_data():
 def get_test_data(count = 1000):
     data = dataset.test.next_batch(count)
     return data[0], data[1]
+
+def plot_prediction(model):
+    x_te, y_te = get_test_data(10)
+    proba = model.predict(x_te)
+
+    x_img = np.reshape(x_te, (-1, 28, 28))
+    proba = proba.tolist()
+    y_cl = [yi.index(max(yi)) for yi in proba]
+
+    i = 0
+    for img in x_img:
+        plt.imshow(img)
+        plt.show()
+        print('Your model prediction: '+ str(y_cl[i]))
+        i += 1
 
 def plot_correlation_matrix(y_true, y_pred):
     mat = []
