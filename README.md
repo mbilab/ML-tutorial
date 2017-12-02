@@ -4,6 +4,7 @@ pip install --upgrade pip
 python3 -m venv ~/.virtualenvs/ml
 pip install jupyter
 pip install keras
+pip install matplotlib
 pip install nltk
 pip install numpy
 pip install pydotplus

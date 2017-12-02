@@ -1,6 +1,7 @@
 import math
 import matplotlib.pyplot as plt
 import numpy as np
+
 group1 = [
         [1, 2.0, 1.7],
         [1, 1.8, 1.8],
@@ -25,7 +26,7 @@ group2 = [
 
 training_data = group1 + group2
 
-def knn(tr, te, k):
+def demo_knn(tr, te, k):
     # each element in the tr is a tuple: (label, x value, y value)
     # te is a tuple: (x value, y-value)
 
@@ -56,9 +57,9 @@ def knn(tr, te, k):
         print('The test position is in group x')
 
 def plot(te):
-    plt.scatter(*zip(*np.array(group1)[:,1:]), marker='o', color='k')
-    plt.scatter(*zip(*np.array(group2)[:,1:]), marker='x', color='r')
-    plt.scatter(te[0], te[1], marker=(3, 0), color='b')
+    plt.scatter(*zip(*np.array(group1)[:,1:]), edgecolors='r', facecolors='none', marker='o')
+    plt.scatter(*zip(*np.array(group2)[:,1:]), edgecolors='b', marker='x')
+    plt.scatter(te[0], te[1], edgecolors='tab:purple', facecolors='none', marker='^')
 
     plt.title('knn')
     plt.xlabel('x')
