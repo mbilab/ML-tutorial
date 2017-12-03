@@ -1,6 +1,6 @@
 GAN/*.png
 gan/output
 gan/good_output
-nlp/nltk_data
+nlp/.nltk_data/
 .ipynb_checkpoints/
 __pycache__/

@@ -1,73 +1,32 @@
+from keras.layers import Dense, Activation
+from keras.models import Sequential
 import matplotlib.pyplot as plt
-import matplotlib.image as mpimg
 import numpy as np
-
 from tensorflow.examples.tutorials.mnist import input_data
 
-from keras.models import Sequential
-from keras.layers import Dense, Activation
+def demo_nn():
+    model = Sequential()
+    model.add(Dense(256, activation='relu', input_dim=784))
+    model.add(Dense(10, activation='softmax'))
+    model.compile(loss='categorical_crossentropy', metrics = ['accuracy'], optimizer='adam')
+    model.fit(X_train, y_train, batch_size=11000, epochs=10, validation_split=0.2, verbose=1)
 
-dataset = input_data.read_data_sets("./mnist/", one_hot = True)
+    y_pred = model.predict(X_test)
+    #plot_correlation_matrix(y_test, y_pred)
 
-def get_train_data():
-    data = dataset.train.next_batch(50000)
-    return data[0], data[1]
+def mnist_data():
+    mnist = input_data.read_data_sets('./mnist/', one_hot=True)
+    return mnist.train.images, mnist.train.labels, mnist.test.images, mnist.test.labels
 
-def get_test_data(count = 1000):
-    data = dataset.test.next_batch(count)
-    return data[0], data[1]
-
-def plot_prediction(model):
-    x_te, y_te = get_test_data(10)
-    proba = model.predict(x_te)
-
-    x_img = np.reshape(x_te, (-1, 28, 28))
-    proba = proba.tolist()
-    y_cl = [yi.index(max(yi)) for yi in proba]
-
-    i = 0
-    for img in x_img:
-        plt.imshow(img)
-        plt.show()
-        print('Your model prediction: '+ str(y_cl[i]))
-        i += 1
-
-def plot_correlation_matrix(y_true, y_pred):
-    mat = []
-    for i in range(10):
-        line = []
-        for j in range(10):
-            line.append(10)
-        mat.append(line)
-
-    if type(y_true) != list:
-        y_true = y_true.tolist()
-    if type(y_pred) != list:
-        y_pred = y_pred.tolist()
-
-    for i in range(len(y_true)):
-        t_class = y_true[i].index(1)
-        p_class = y_pred[i].index(max(y_pred[i]))
-        mat[t_class][p_class] += 1
-
-    print('correlation matrix between predction and real condition: ')
-    plt.matshow(mat)
+def plot_X(X, figsize=(20, 2), n_col=10):
+    fig = plt.figure(figsize=figsize)
+    for i, v in enumerate(X.reshape(-1, 28, 28)):
+        sp = fig.add_subplot(np.ceil(len(X)/n_col), n_col, i + 1)
+        plt.imshow(v, cmap='gray')
+        sp.set_title('test')
     plt.show()
 
-def demo():
-    model = Sequential()
-    model.add(Dense(256, input_dim = 784, activation = 'relu'))
-    model.add(Dense(10, activation = 'softmax'))
+X_train, y_train, X_test, y_test = mnist_data()
 
-    model.compile(loss = 'categorical_crossentropy', optimizer = 'adam', metrics = ['accuracy'])
-    x_tr, y_tr = get_train_data()
-    model.fit(x_tr, y_tr, epochs = 20, batch_size = 128, validation_split = 0.2, verbose = 1)
-
-    x_te, y_te = get_test_data()
-    y_pred = model.predict(x_te)
-
-    plot_correlation_matrix(y_te, y_pred)
-
-if __name__ == '__main__':
-    demo()
-
+if '__main__' == __name__:
+    demo_nn()
