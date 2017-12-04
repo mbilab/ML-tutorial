@@ -18,10 +18,10 @@ def mnist_data():
     mnist = input_data.read_data_sets('./mnist/', one_hot=True)
     return mnist.train.images, mnist.train.labels, mnist.test.images, mnist.test.labels
 
-def plot_X(X, figsize=(20, 2), n_col=10):
+def plot_X(X, figsize=(20, 2), cols=10):
     fig = plt.figure(figsize=figsize)
     for i, v in enumerate(X.reshape(-1, 28, 28)):
-        sp = fig.add_subplot(np.ceil(len(X)/n_col), n_col, i + 1)
+        sp = fig.add_subplot(np.ceil(len(X)/cols), cols, i + 1)
         plt.imshow(v, cmap='gray')
         sp.set_title('test')
     plt.show()
