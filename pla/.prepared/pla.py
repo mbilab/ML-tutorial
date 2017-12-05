@@ -2,17 +2,19 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 def demo_pla():
-    data = np.loadtxt('./pla.dat', np.float32)
     step = 0
-    w = np.zeros(data.shape[1])
+    # y would be the first column after rolling
+    x = np.roll(np.loadtxt('./pla.dat', np.float32), 1, axis=1)
+    y = np.copy(x[:,0])
+    x[:,0] = np.ones(len(x)) # set the first column as bias
+    w = np.zeros(x.shape[1])
     while True:
         err = 0
-        for d in data:
-            x = np.append(1, d[:4])
-            if np.dot(w, x) * d[-1] <= 0:
+        for _x, _y in zip(x, y):
+            if np.dot(w, _x) * _y <= 0:
                 err += 1
                 step += 1
-                w += x * d[-1]
+                w += _x * _y
         if 0 == err: break
     print('#%d' % (step), w)
 
@@ -23,13 +25,13 @@ def plot(): # {{{
     line_x = np.array([-size, size], np.float32)
     line_y = -(w[0] + w[1] * line_x) / w[2]
     slope = -w[1] / w[2]
-    if slope > 0 and np.dot(w, [0, -size, size]) > 0 or \
-        slope < 0 and np.dot(w, [0, size, size]) > 0: # top > 0
-        top_color, bottom_color = 'r', 'b'
-    else: # top < 0
-        top_color, bottom_color = 'b', 'r'
-    plt.fill_between(line_x, line_y, size, alpha=0.25, color=top_color)
-    plt.fill_between(line_x, -size, line_y, alpha=0.25, color=bottom_color)
+
+    # top-left or top-right
+    check_point = [1, -size, size] if slope > 0 else [1, size, size]
+
+    colors = ['r', 'b'] if np.dot(w, check_point) > 0 else ['b', 'r']
+    plt.fill_between(line_x, line_y, size, alpha=0.25, color=colors[0])
+    plt.fill_between(line_x, -size, line_y, alpha=0.25, color=colors[1])
     plt.plot(line_x, line_y, color='w')
     for _x, _y in zip(x, y):
         if _y > 0:
