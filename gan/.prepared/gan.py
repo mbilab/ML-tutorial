@@ -24,10 +24,10 @@ from keras.layers import BatchNormalization
 from keras.models import load_model, Sequential
 from keras.optimizers import Adam, RMSprop
 
-def demo(noise_size):
+def demo(sample_size):
     model = load_model('./.prepared/model.h5')
     dcgan = DCGAN(image_width=28, image_height=28, image_channels=1)
-    images = model.predict(dcgan.noise(noise_size))
+    images = model.predict(dcgan.noise(sample_size))
 
     plt.figure(figsize=(8,8))
     for i in range(images.shape[0]):
@@ -96,36 +96,36 @@ class DCGAN(object):
         return model
 
     def nice_generator():
-        model = sequential()
+        model = Sequential()
         dropout = 0.4
         depth = 64+64+64+64
         dim = 7
         # in: 100
         # out: dim x dim x depth
         model.add(Dense(dim*dim*depth, input_dim=100))
-        model.add(Batchnormalization(momentum=0.9))
+        model.add(BatchNormalization(momentum=0.9))
         model.add(Activation('relu'))
         model.add(Reshape((dim, dim, depth)))
         model.add(Dropout(dropout))
 
         # in: dim x dim x depth
         # out: 2*dim x 2*dim x depth/2
-        model.add(Upsampling2d())
-        model.add(Conv2dtranspose(int(depth/2), 5, padding='same'))
-        model.add(Batchnormalization(momentum=0.9))
+        model.add(UpSampling2D())
+        model.add(Conv2DTranspose(int(depth/2), 5, padding='same'))
+        model.add(BatchNormalization(momentum=0.9))
         model.add(Activation('relu'))
 
-        model.add(Upsampling2d())
-        model.add(Conv2dtranspose(int(depth/4), 5, padding='same'))
-        model.add(Batchnormalization(momentum=0.9))
+        model.add(UpSampling2D())
+        model.add(Conv2DTranspose(int(depth/4), 5, padding='same'))
+        model.add(BatchNormalization(momentum=0.9))
         model.add(Activation('relu'))
 
-        model.add(Conv2dtranspose(int(depth/8), 5, padding='same'))
-        model.add(Batchnormalization(momentum=0.9))
+        model.add(Conv2DTranspose(int(depth/8), 5, padding='same'))
+        model.add(BatchNormalization(momentum=0.9))
         model.add(Activation('relu'))
 
         # out: 28 x 28 x 1 grayscale image [0.0,1.0] per pix
-        model.add(Conv2dtranspose(1, 5, padding='same'))
+        model.add(Conv2DTranspose(1, 5, padding='same'))
         model.add(Activation('sigmoid'))
         model.summary()
         return model
