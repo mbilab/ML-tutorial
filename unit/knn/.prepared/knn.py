@@ -58,7 +58,7 @@ def demo_knn(tr, te, k):
 
 def plot(te):
     plt.scatter(*zip(*np.array(group1)[:,1:]), edgecolors='r', facecolors='none', marker='o')
-    plt.scatter(*zip(*np.array(group2)[:,1:]), edgecolors='b', marker='x')
+    plt.scatter(*zip(*np.array(group2)[:,1:]), facecolors='b', marker='x')
     plt.scatter(te[0], te[1], edgecolors='tab:purple', facecolors='none', marker='^')
 
     plt.title('knn')
