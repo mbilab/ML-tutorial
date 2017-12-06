@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-def demo_pla():
+def demo_pla(learning_rate):
     step = 0
     # y would be the first column after rolling
     x = np.roll(np.loadtxt('./pla.dat', np.float32), 1, axis=1)
@@ -14,7 +14,7 @@ def demo_pla():
             if np.dot(w, _x) * _y <= 0:
                 err += 1
                 step += 1
-                w += _x * _y
+                w += learning_rate *_y * _y
         if 0 == err: break
     print('#%d' % (step), w)
 
