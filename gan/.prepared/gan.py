@@ -6,23 +6,17 @@ Dependencies: tensorflow 1.0 and keras 2.0
 Usage: python3 dcgan_mnist.py
 '''
 
-import numpy as np
-import time
-import os
-
-import matplotlib
-import matplotlib.pyplot as plt
-matplotlib.use('Agg') #! necessary?
-
-from tensorflow.examples.tutorials.mnist import input_data
-
-from sklearn.utils import shuffle
 from keras.layers import Dense, Activation, Flatten, Reshape
 from keras.layers import Conv2D, Conv2DTranspose, UpSampling2D
 from keras.layers import LeakyReLU, Dropout
 from keras.layers import BatchNormalization
 from keras.models import load_model, Sequential
 from keras.optimizers import Adam, RMSprop
+from keras.utils import to_categorical
+from keras.utils.data_utils import get_file
+import matplotlib.pyplot as plt
+import numpy as np
+from sklearn.utils import shuffle
 
 def demo(sample_size):
     model = load_model('./.prepared/model.h5')
@@ -47,16 +41,15 @@ def exe(images, G, D, batch_size, noise_size):
     dcgan = DCGAN(image_width=28, image_height=28, image_channels=1, generator=G, discriminator=D, noise_size=noise_size)
     dcgan.fit(images=images)
 
-
-class DCGAN(object):
+class GAN(object):
 
     def __init__(self, image_width, image_height, image_channels, generator=None, discriminator=None, noise_size=100):
         self.image_width = image_width
         self.image_height = image_height
         self.image_channels = image_channels
         self.noise_size = noise_size
-        self.D = self.default_discriminator() if discriminator == None else discriminator
-        self.G = self.default_generator() if generator == None else generator
+        self.D = discriminator if discriminator else self.default_discriminator()
+        self.G = generator if generator else self.default_generator()
         self.DM = self.discriminator_model() # (D)
         self.AM = self.adversarial_model() # (G+D)
 
@@ -73,7 +66,7 @@ class DCGAN(object):
     # (W−F+2P)/S+1 #! what's this?
     def default_discriminator(self):
         model = Sequential()
-        model.add(Dense(256, input_shape=(self.image_width*self.image_height, ), activation='relu')) #! self.image_width...
+        model.add(Dense(256, input_shape=(self.image_width * self.image_height, ), activation='relu'))
         model.add(Dropout(0.4))
         model.add(Dense(1, activation='sigmoid'))
         return model
@@ -83,7 +76,7 @@ class DCGAN(object):
         model.add(Dense(512, input_dim=self.noise_size, activation='relu'))
         model.add(BatchNormalization(momentum=0.9))
         model.add(Dropout(0.4))
-        model.add(Dense(self.image_width*self.image_height, activation='sigmoid')) #! self.image_width...
+        model.add(Dense(self.image_width * self.image_height, activation='sigmoid')) #! self.channels?
         return model
 
     def discriminator_model(self):
@@ -91,15 +84,73 @@ class DCGAN(object):
         optimizer = RMSprop(lr=0.0002, decay=6e-8)
 
         model = Sequential()
-        model.add(self.D)
+        model.add(self.D) #! model = self.D?
         model.compile(loss='binary_crossentropy', metrics=['accuracy'], optimizer=optimizer)
         return model
 
-    def nice_generator():
+    def fit(self, x_train, batch_size=10000, epochs=2):
+        training_step = 0
+        for i_epoch in range(epochs):
+            shuffled_x = shuffle(x_train)
+            for i_batch in range(0, len(x_train), batch_size):
+                training_step += 1
+
+                batch = shuffled_x[i_batch:i_batch+batch_size]
+                generated_batch = self.G.predict(self.noise(batch_size))
+                x = np.concatenate((batch, generated_batch))
+                y = np.concatenate((np.ones(batch_size), np.zeros(batch_size)))
+                self.DM.trainable = True
+                d_loss = self.DM.train_on_batch(x, y)
+    
+                x = self.noise(batch_size)
+                y = np.ones([batch_size, 1])
+                self.DM.trainable = False
+                a_loss = self.AM.train_on_batch(x, y)
+                x = self.noise(batch_size)
+                a_loss = self.AM.train_on_batch(x, y)
+                print("%d: D: loss: %f, acc: %f, A: loss: %f, acc: %f" % (training_step,
+                    d_loss[0], d_loss[1],
+                    a_loss[0], a_loss[1]
+                    ))
+            #self.plot_images(output, save2file=True, samples=noise_input.shape[0], noise=noise_input, step=(i+1))
+
+    def nice_discriminator(): # {{{
+        model = Sequential()
+        depth = 64
+        dropout = 0.4
+
+        # In: 28 x 28 x 1, depth = 1
+        # Out: 14 x 14 x 1, depth = 64
+        input_shape = (self.image_width, self.image_height, self.image_channels)
+        model.add(Conv2D(depth*2, 5, strides=2, input_shape=input_shape, padding='same'))
+        model.add(LeakyReLU(alpha=0.2))
+        model.add(Dropout(dropout))
+
+        model.add(Conv2D(depth*2, 5, strides=2, padding='same'))
+        model.add(LeakyReLU(alpha=0.2))
+        model.add(Dropout(dropout))
+
+        model.add(Conv2D(depth*1, 5, strides=2, padding='same'))
+        model.add(LeakyReLU(alpha=0.2))
+        model.add(Dropout(dropout))
+
+        model.add(Conv2D(depth*1, 5, strides=1, padding='same'))
+        model.add(LeakyReLU(alpha=0.2))
+        model.add(Dropout(dropout))
+
+        # Out: 1-dim probability
+        model.add(Flatten())
+        model.add(Dense(1))
+        model.add(Activation('sigmoid'))
+        return model
+    # }}}
+
+    def nice_generator(): # {{{
         model = Sequential()
         dropout = 0.4
         depth = 64+64+64+64
         dim = 7
+
         # in: 100
         # out: dim x dim x depth
         model.add(Dense(dim*dim*depth, input_dim=100))
@@ -124,72 +175,11 @@ class DCGAN(object):
         model.add(BatchNormalization(momentum=0.9))
         model.add(Activation('relu'))
 
-        # out: 28 x 28 x 1 grayscale image [0.0,1.0] per pix
+        # out: 28 x 28 x 1 grayscale image, i.e. [0.0,1.0] per pixel
         model.add(Conv2DTranspose(1, 5, padding='same'))
         model.add(Activation('sigmoid'))
-        model.summary()
         return model
-
-    def nice_discriminator():
-        model = Sequential()
-        depth = 64
-        dropout = 0.4
-        # In: 28 x 28 x 1, depth = 1
-        # Out: 14 x 14 x 1, depth=64
-        input_shape = (self.image_width, self.image_height, self.image_channels)
-        model.add(Conv2D(depth*2, 5, strides=2, input_shape=input_shape,\
-            padding='same'))
-        model.add(LeakyReLU(alpha=0.2))
-        model.add(Dropout(dropout))
-
-        model.add(Conv2D(depth*2, 5, strides=2, padding='same'))
-        model.add(LeakyReLU(alpha=0.2))
-        model.add(Dropout(dropout))
-
-        model.add(Conv2D(depth*1, 5, strides=2, padding='same'))
-        model.add(LeakyReLU(alpha=0.2))
-        model.add(Dropout(dropout))
-
-        model.add(Conv2D(depth*1, 5, strides=1, padding='same'))
-        model.add(LeakyReLU(alpha=0.2))
-        model.add(Dropout(dropout))
-
-        # Out: 1-dim probability
-        model.add(Flatten())
-        model.add(Dense(1))
-        model.add(Activation('sigmoid'))
-        model.summary()
-        return model
-
-    def fit(self, images, batch_size=256, epochs=10, plot_interval=0):
-        step = len(x_train)//batch_size
-        for i in range(epochs * step):
-            k = i % step
-
-            if k == 0:
-                self.x_train = shuffle(self.x_train)
-
-            batch = self.x_train[0*k:batch_size*k]
-            #batch = self.x_train[np.random.randint(0, self.images.shape[0], size=batch_size), :]
-            noise = self.noise(batch_size)
-            fake_batch = self.G.predict(noise)
-            x = np.concatenate((batch, fake_batch))
-            y = np.concatenate(np.ones([batch_size, 1], np.zeros([batch_size, 0])))
-            self.DM.trainable = True
-            d_loss = self.DM.train_on_batch(x, y)
-
-            y = np.ones([batch_size, 1])
-            noise = self.noise(batch_size)
-            self.DM.trainable = False
-            a_loss = self.AM.train_on_batch(noise, y)
-            print("%d: D: loss: %f, acc: %f, A: loss: %f, acc: %f" % (i,
-                d_loss[0], d_loss[1],
-                a_loss[0], a_loss[1]
-                ))
-
-            if 0 == plot_interval | (i + 1) % plot_interval:
-                continue
-            #self.plot_images(output, save2file=True, samples=noise_input.shape[0], noise=noise_input, step=(i+1))
+    # }}}
 
     def noise(self, batch_size):
         return np.random.uniform(-1.0, 1.0, size=[batch_size, self.noise_size])
@@ -213,16 +203,33 @@ class DCGAN(object):
     def save_g_model(self):
         self.G.save('path')
 
-def test():
-    mnist = input_data.read_data_sets('./mnist/', one_hot=True)
+def mnist_data():
+    # download from aws
+    path = get_file(
+            'mnist.npz',
+            'https://s3.amazonaws.com/img-datasets/mnist.npz',
+            cache_dir='.',
+            cache_subdir='.',
+            file_hash='8a61469f7ea1b51cbae51d4f78837e45'
+            )
 
-    dcgan = DCGAN(28, 28, 1)
-    check_noise = dcgan.noise(10)
-    dcgan.fit(minst.train.images, callback=check_images)
+    # load and normalize
+    f = np.load(path)
+    x_train, y_train = f['x_train'].reshape(-1, 784) / 255, to_categorical(f['y_train'], 10)
+    x_test, y_test = f['x_test'].reshape(-1, 784) / 255, to_categorical(f['y_test'], 10)
+    f.close()
+
+    return x_train, y_train, x_test, y_test
+
+def test():
+    gan = GAN(28, 28, 1)
+    check_noise = gan.noise(10)
+    gan.fit(x_train) #! callback
 
     def check_images():
-        dcgan.plot_image(check_noise)
+        gan.plot_image(check_noise)
 
+x_train, y_train, x_test, y_test = mnist_data()
 
 if __name__ == '__main__':
-    demo(100)
+    test()
