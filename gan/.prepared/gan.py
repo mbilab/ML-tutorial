@@ -41,7 +41,7 @@ def exe(images, G, D, batch_size, noise_size):
     dcgan = DCGAN(image_width=28, image_height=28, image_channels=1, generator=G, discriminator=D, noise_size=noise_size)
     dcgan.fit(images=images)
 
-class GAN(object):
+class GAN:
 
     def __init__(self, image_width, image_height, image_channels, generator=None, discriminator=None, noise_size=100):
         self.image_width = image_width
@@ -88,7 +88,7 @@ class GAN(object):
         model.compile(loss='binary_crossentropy', metrics=['accuracy'], optimizer=optimizer)
         return model
 
-    def fit(self, x_train, batch_size=10000, epochs=2):
+    def fit(self, x_train, batch_size=10000, epochs=1):
         training_step = 0
         for i_epoch in range(epochs):
             shuffled_x = shuffle(x_train)
@@ -112,9 +112,36 @@ class GAN(object):
                     d_loss[0], d_loss[1],
                     a_loss[0], a_loss[1]
                     ))
-            #self.plot_images(output, save2file=True, samples=noise_input.shape[0], noise=noise_input, step=(i+1))
+            self.plot_images()
 
-    def nice_discriminator(): # {{{
+    def noise(self, batch_size):
+        return np.random.uniform(-1.0, 1.0, size=[batch_size, self.noise_size])
+
+    def plot_images(self, images=None, noise=10, figsize=(15, 1.5), cols=10):
+        if images is None:
+            if isinstance(noise, int):
+                noise = self.noise(noise)
+            images = self.G.predict(noise).reshape(-1, self.image_width, self.image_height)
+
+        plt.figure(figsize=figsize)
+        rows = np.ceil(len(images) / cols)
+        for i, v in enumerate(images):
+            plt.subplot(rows, cols, i+1)
+            plt.axis('off')
+            plt.imshow(v, cmap='gray')
+        #plt.savefig(filename)
+        #plt.close('all')
+        plt.show()
+
+    def save_g_model(self):
+        self.G.save('path')
+
+class DCGAN(GAN):
+
+    def __init__(self, image_width, image_height, image_channels, generator=None, discriminator=None, noise_size=100):
+        super(DCGAN, self).__init__(image_width, image_height, image_channels, generator, discriminator, noise_size)
+
+    def default_discriminator(): # {{{
         model = Sequential()
         depth = 64
         dropout = 0.4
@@ -145,7 +172,7 @@ class GAN(object):
         return model
     # }}}
 
-    def nice_generator(): # {{{
+    def default_generator(): # {{{
         model = Sequential()
         dropout = 0.4
         depth = 64+64+64+64
@@ -180,28 +207,6 @@ class GAN(object):
         model.add(Activation('sigmoid'))
         return model
     # }}}
-
-    def noise(self, batch_size):
-        return np.random.uniform(-1.0, 1.0, size=[batch_size, self.noise_size])
-
-    def plot_images(self, images=None, noise=None, figsize=(20, 2), cols=10):
-        if images is None:
-            if isinstance(noise, int):
-                noise = self.noise(noise)
-            images = self.generator.predict(noise).reshape(-1, self.image_width, self.image_height, self.channels)
-
-        plt.figure(figsize=figsize)
-        rows = np.ceil(len(images) / 4)
-        for i in range(len(images)):
-            plt.subplot(rows, cols, i+1)
-            plt.imshow(images[i], cmap='gray')
-            plt.axis('off')
-        #plt.savefig(filename)
-        #plt.close('all')
-        plt.show()
-
-    def save_g_model(self):
-        self.G.save('path')
 
 def mnist_data():
     # download from aws

@@ -33,8 +33,9 @@ def mnist_data():
 
 def plot_images(x, y, figsize=(15, 1.5), cols=10):
     plt.figure(figsize=figsize)
+    rows = np.ceil(len(x) / cols)
     for i, v in enumerate(x.reshape(-1, 28, 28)):
-        plt.subplot(np.ceil(len(x)/cols), cols, i + 1)
+        plt.subplot(rows, cols, i+1)
         plt.axis('off')
         plt.title(y[i].argmax())
         plt.imshow(v, cmap='gray')
