@@ -16,6 +16,7 @@ from keras.utils import to_categorical
 from keras.utils.data_utils import get_file
 import matplotlib.pyplot as plt
 import numpy as np
+import math
 from sklearn.utils import shuffle
 
 def demo(sample_size):
@@ -104,22 +105,24 @@ class GAN:
     def noise(self, batch_size):
         return np.random.uniform(-1.0, 1.0, size=[batch_size, self.noise_size])
 
-    def plot_images(self, images, figsize=(8, 8), path='./mnist.png' save=False):
+    def plot_images(self, images, figsize=(8, 8), save=False):
+        w = 4
+        h = 4
+        for pic in range(images.shape[0]//(w*h)):
+            plt.figure(figsize=figsize)
+            for i in range(w*h):
+                plt.subplot(w, h, i+1)
+                image = images[pic*w*h + i, :, :, :]
+                image = np.reshape(image, [28, 28])
+                plt.imshow(image, cmap='gray')
+                plt.axis('off')
+                plt.tight_layout()
 
-        plt.figure(figsize=figsize)
-        for i in range(images.shape[0]):
-            plt.subplot(4, 4, i+1)
-            image = images[i, :, :, :]
-            image = np.reshape(image, [28, 28])
-            plt.imshow(image, cmap='gray')
-            plt.axis('off')
-            plt.tight_layout()
+            if save:
+                plt.savefig('./mnist_%d.png' % pic)
+                print('Output Image Saved!')
+            plt.show()
 
-        if save:
-            plt.savefig(path)
-            print('Output Image Saved!')
-
-        plt.show()
 
 
 
