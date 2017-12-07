@@ -6,6 +6,7 @@ Dependencies: tensorflow 1.0 and keras 2.0
 Usage: python3 dcgan_mnist.py
 '''
 
+from datetime import datetime
 from keras.layers import Dense, Activation, Flatten, Reshape
 from keras.layers import Conv2D, Conv2DTranspose, UpSampling2D
 from keras.layers import LeakyReLU, Dropout
@@ -25,11 +26,6 @@ def demo(sample_size):
     images = model.predict(dcgan.noise(sample_size))
 
     dcgan.plot_images(images=images, save=True)
-
-
-def exe(images, G, D, batch_size, noise_size):
-    dcgan = DCGAN(image_width=28, image_height=28, image_channels=1, generator=G, discriminator=D, noise_size=noise_size)
-    dcgan.fit(images=images)
 
 class GAN:
 
@@ -53,7 +49,7 @@ class GAN:
         model.compile(loss='binary_crossentropy', metrics=['accuracy'], optimizer=optimizer)
         return model
 
-    # (W−F+2P)/S+1 #! what's this?
+    # (W-F+2P)/S+1 #! what's this?
     def default_discriminator(self):
         model = Sequential()
         model.add(Dense(256, input_shape=(self.image_width * self.image_height, ), activation='relu'))
@@ -79,33 +75,38 @@ class GAN:
         return model
 
     def fit(self, x_train, batch_size=10000, callback=None, epochs=1):
-        training_step = 0
-        for i_epoch in range(epochs):
+        self.fit_start = datetime.now()
+        self.training_step = 0
+        for self.i_epoch in range(epochs):
             shuffled_x = shuffle(x_train)
             for i_batch in range(0, len(x_train), batch_size):
-                training_step += 1
+                self.training_step += 1
 
                 batch = shuffled_x[i_batch:i_batch+batch_size]
                 generated_batch = self.G.predict(self.noise(batch_size))
                 x = np.concatenate((batch, generated_batch))
                 y = np.concatenate((np.ones(batch_size), np.zeros(batch_size)))
                 self.DM.trainable = True
-                d_loss = self.DM.train_on_batch(x, y)
+                self.d_loss = self.DM.train_on_batch(x, y)
 
                 x = self.noise(batch_size)
                 y = np.ones([batch_size, 1])
                 self.DM.trainable = False
-                a_loss = self.AM.train_on_batch(x, y)
+                self.a_loss = self.AM.train_on_batch(x, y)
                 #x = self.noise(batch_size)
                 #a_loss = self.AM.train_on_batch(x, y)
 
-                if callback:
-                    callback(training_step, i_epoch, d_loss[0], d_loss[1], a_loss[0], a_loss[1])
+                if callback: callback()
+
+    def fit_status(self):
+        duration = datetime.now() - self.fit_start
+        return "(%s) #%d: d_loss: %.3f, d_acc: %.3f, a_loss: %.3f, a_acc: %.3f" % \
+                (duration, self.training_step, self.d_loss[0], self.d_loss[1], self.a_loss[0], self.a_loss[1])
 
     def noise(self, batch_size):
         return np.random.uniform(-1.0, 1.0, size=[batch_size, self.noise_size])
 
-        def plot_images(self, images=None, cols=10, noise=10, figsize=(8, 8), save=False):
+    def plot_images(self, cols=10, figsize=(15, 1.5), images=None, noise=10, save=False, title=None):
         if images is None:
             if isinstance(noise, int):
                 noise = self.noise(noise)
@@ -117,9 +118,11 @@ class GAN:
             plt.subplot(rows, cols, i+1)
             plt.axis('off')
             plt.imshow(v.reshape(v.shape[0], v.shape[1]), cmap='gray')
+        if title: plt.suptitle(title)
         if save:
             plt.savefig('./mnist.png')
-        plt.show()
+        else:
+            plt.show()
 
     def save_g_model(self):
         self.G.save('path')
@@ -218,14 +221,16 @@ def mnist_data():
     return x_train, y_train, x_test, y_test
 
 def test():
-    def check(training_step, epoch, d_loss, d_accuracy, a_loss, a_accuracy):
-        print("%d: D: loss: %f, acc: %f, A: loss: %f, acc: %f" %
-                (training_step, d_loss, d_accuracy, a_loss, a_accuracy))
-        gan.plot_images(noise=check_noise)
+    def check():
+        # 60000 samples * 10 epochs / 100 batch size = 60000 training steps
+        # mod 600 indicates 10 outputs
+        if gan.training_step % 600:
+            return
+        gan.plot_images(noise=check_noise, save='tmp/%0d.png' % (gan.training_step), title=gan.fit_status())
 
     gan = MNIST_DCGAN()
     check_noise = gan.noise(10)
-    gan.fit(x_train, callback=check)
+    gan.fit(x_train, batch_size=100, callback=check, epochs=10)
 
 x_train, y_train, x_test, y_test = mnist_data()
 
