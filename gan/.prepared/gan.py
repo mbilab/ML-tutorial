@@ -105,28 +105,7 @@ class GAN:
     def noise(self, batch_size):
         return np.random.uniform(-1.0, 1.0, size=[batch_size, self.noise_size])
 
-    def plot_images(self, images, figsize=(8, 8), save=False):
-        w = 4
-        h = 4
-        for pic in range(images.shape[0]//(w*h)):
-            plt.figure(figsize=figsize)
-            for i in range(w*h):
-                plt.subplot(w, h, i+1)
-                image = images[pic*w*h + i, :, :, :]
-                image = np.reshape(image, [28, 28])
-                plt.imshow(image, cmap='gray')
-                plt.axis('off')
-                plt.tight_layout()
-
-            if save:
-                plt.savefig('./mnist_%d.png' % pic)
-                print('Output Image Saved!')
-            plt.show()
-
-
-
-
-        '''
+        def plot_images(self, images=None, cols=10, noise=10, figsize=(8, 8), save=False):
         if images is None:
             if isinstance(noise, int):
                 noise = self.noise(noise)
@@ -137,11 +116,10 @@ class GAN:
         for i, v in enumerate(images):
             plt.subplot(rows, cols, i+1)
             plt.axis('off')
-            plt.imshow(v, cmap='gray')
-        #plt.savefig(filename)
-        #plt.close('all')
+            plt.imshow(v.reshape(v.shape[0], v.shape[1]), cmap='gray')
+        if save:
+            plt.savefig('./mnist.png')
         plt.show()
-        '''
 
     def save_g_model(self):
         self.G.save('path')
