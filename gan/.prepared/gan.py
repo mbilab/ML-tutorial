@@ -20,22 +20,11 @@ from sklearn.utils import shuffle
 
 def demo(sample_size):
     model = load_model('./.prepared/model.h5')
-    dcgan = DCGAN(image_width=28, image_height=28, image_channels=1)
+    dcgan = GAN(image_width=28, image_height=28, image_channels=1)
     images = model.predict(dcgan.noise(sample_size))
 
-    plt.figure(figsize=(8,8))
-    for i in range(images.shape[0]):
-        plt.subplot(4, 4, i+1)
-        image = images[i, :, :, :]
-        image = np.reshape(image, [28, 28])
-        plt.imshow(image, cmap='gray')
-        plt.axis('off')
-    plt.tight_layout()
-    plt.show()
+    dcgan.plot_images(images=images, save=True)
 
-    #plt.savefig(file_name)
-    #plt.close('all')
-    #print('Output Image Saved!')
 
 def exe(images, G, D, batch_size, noise_size):
     dcgan = DCGAN(image_width=28, image_height=28, image_channels=1, generator=G, discriminator=D, noise_size=noise_size)
@@ -101,7 +90,7 @@ class GAN:
                 y = np.concatenate((np.ones(batch_size), np.zeros(batch_size)))
                 self.DM.trainable = True
                 d_loss = self.DM.train_on_batch(x, y)
-    
+
                 x = self.noise(batch_size)
                 y = np.ones([batch_size, 1])
                 self.DM.trainable = False
@@ -115,7 +104,26 @@ class GAN:
     def noise(self, batch_size):
         return np.random.uniform(-1.0, 1.0, size=[batch_size, self.noise_size])
 
-    def plot_images(self, images=None, noise=10, figsize=(15, 1.5), cols=10):
+    def plot_images(self, images, figsize=(8, 8), path='./mnist.png' save=False):
+
+        plt.figure(figsize=figsize)
+        for i in range(images.shape[0]):
+            plt.subplot(4, 4, i+1)
+            image = images[i, :, :, :]
+            image = np.reshape(image, [28, 28])
+            plt.imshow(image, cmap='gray')
+            plt.axis('off')
+            plt.tight_layout()
+
+        if save:
+            plt.savefig(path)
+            print('Output Image Saved!')
+
+        plt.show()
+
+
+
+        '''
         if images is None:
             if isinstance(noise, int):
                 noise = self.noise(noise)
@@ -130,6 +138,7 @@ class GAN:
         #plt.savefig(filename)
         #plt.close('all')
         plt.show()
+        '''
 
     def save_g_model(self):
         self.G.save('path')
