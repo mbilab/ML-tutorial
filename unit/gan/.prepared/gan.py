@@ -20,16 +20,9 @@ import numpy as np
 import math
 from sklearn.utils import shuffle
 
-def demo(sample_size):
-    model = load_model('./.prepared/model.h5')
-    dcgan = GAN(image_width=28, image_height=28, image_channels=1)
-    images = model.predict(dcgan.noise(sample_size))
-
-    dcgan.plot_images(images=images, save=True)
-
 class GAN:
 
-    def __init__(self, image_width, image_height, image_channels, generator=None, discriminator=None, noise_size=100):
+    def __init__(self, image_width, image_height, image_channels, discriminator=None, generator=None, noise_size=100):
         self.image_width = image_width
         self.image_height = image_height
         self.image_channels = image_channels
@@ -52,14 +45,14 @@ class GAN:
     # (W-F+2P)/S+1 #! what's this?
     def default_discriminator(self):
         model = Sequential()
-        model.add(Dense(256, input_shape=(self.image_width * self.image_height, ), activation='relu'))
+        model.add(Dense(256, activation='relu', input_shape=(self.image_width * self.image_height, )))
         model.add(Dropout(0.4))
         model.add(Dense(1, activation='sigmoid'))
         return model
 
     def default_generator(self):
         model = Sequential()
-        model.add(Dense(512, input_dim=self.noise_size, activation='relu'))
+        model.add(Dense(512, activation='relu', input_dim=self.noise_size))
         model.add(BatchNormalization(momentum=0.9))
         model.add(Dropout(0.4))
         model.add(Dense(self.image_width * self.image_height, activation='sigmoid')) #! self.channels?
@@ -201,6 +194,9 @@ class MNIST_DCGAN(GAN):
 
     def fit(self, *args, **kwargs):
         super(MNIST_DCGAN, self).fit(args[0].reshape(-1, 28, 28, 1), **kwargs)
+
+def demo_gan(sample_size):
+    return load_model('./.prepared/model.h5')
 
 def mnist_data():
     # download from aws
