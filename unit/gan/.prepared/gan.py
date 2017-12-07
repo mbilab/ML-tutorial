@@ -1,23 +1,18 @@
-'''
-DCGAN on MNIST using Keras
-Author: Rowel Atienza
-Project: https://github.com/roatienza/Deep-Learning-Experiments
-Dependencies: tensorflow 1.0 and keras 2.0
-Usage: python3 dcgan_mnist.py
-'''
+#!/usr/bin/env python3
+
+# see https://github.com/roatienza/Deep-Learning-Experiments/blob/master/Experiments/Tensorflow/GAN/dcgan_mnist.py
 
 from datetime import datetime
-from keras.layers import Dense, Activation, Flatten, Reshape
-from keras.layers import Conv2D, Conv2DTranspose, UpSampling2D
-from keras.layers import LeakyReLU, Dropout
+from keras.layers import Activation, Dense, Flatten, Reshape
 from keras.layers import BatchNormalization
+from keras.layers import Conv2D, Conv2DTranspose, UpSampling2D
+from keras.layers import Dropout, LeakyReLU
 from keras.models import load_model, Sequential
 from keras.optimizers import Adam, RMSprop
 from keras.utils import to_categorical
 from keras.utils.data_utils import get_file
 import matplotlib.pyplot as plt
 import numpy as np
-import math
 from sklearn.utils import shuffle
 
 class GAN:
