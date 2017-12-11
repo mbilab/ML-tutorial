@@ -2,7 +2,12 @@
 
 # see https://github.com/roatienza/Deep-Learning-Experiments/blob/master/Experiments/Tensorflow/GAN/dcgan_mnist.py
 
+# for `_tkinter.TclError: no display name and no $DISPLAY environment variable`
+#import matplotlib
+#matplotlib.use('Agg')
+
 from datetime import datetime
+import h5py
 from keras.layers import Activation, Dense, Flatten, Reshape
 from keras.layers import BatchNormalization
 from keras.layers import Conv2D, Conv2DTranspose, UpSampling2D
@@ -41,15 +46,12 @@ class GAN:
     def default_discriminator(self):
         model = Sequential()
         model.add(Dense(256, activation='relu', input_shape=(self.image_width * self.image_height, )))
-        model.add(Dropout(0.4))
         model.add(Dense(1, activation='sigmoid'))
         return model
 
     def default_generator(self):
         model = Sequential()
-        model.add(Dense(512, activation='relu', input_dim=self.noise_size))
-        model.add(BatchNormalization(momentum=0.9))
-        model.add(Dropout(0.4))
+        model.add(Dense(256, activation='relu', input_dim=self.noise_size))
         model.add(Dense(self.image_width * self.image_height, activation='sigmoid')) #! self.channels?
         return model
 
@@ -94,7 +96,7 @@ class GAN:
     def noise(self, batch_size):
         return np.random.uniform(-1.0, 1.0, size=[batch_size, self.noise_size])
 
-    def plot_images(self, cols=10, figsize=(15, 1.5), images=None, noise=10, save=False, title=None):
+    def plot_images(self, cols=10, figsize=(15, 1.5), images=None, noise=10, save=None, title=None):
         if images is None:
             if isinstance(noise, int):
                 noise = self.noise(noise)
@@ -108,12 +110,9 @@ class GAN:
             plt.imshow(v.reshape(v.shape[0], v.shape[1]), cmap='gray')
         if title: plt.suptitle(title)
         if save:
-            plt.savefig('./mnist.png')
+            plt.savefig(save)
         else:
             plt.show()
-
-    def save_g_model(self):
-        self.G.save('path')
 
 class MNIST_DCGAN(GAN):
 
@@ -190,8 +189,11 @@ class MNIST_DCGAN(GAN):
     def fit(self, *args, **kwargs):
         super(MNIST_DCGAN, self).fit(args[0].reshape(-1, 28, 28, 1), **kwargs)
 
-def demo_gan(sample_size):
-    return load_model('./.prepared/model.h5')
+def demo_dcgan():
+    return load_model('./.prepared/mnist_dcgan.G.h5')
+
+def demo_gan():
+    return load_model('./.prepared/mnist_gan.G.h5')
 
 def mnist_data():
     # download from aws
@@ -211,19 +213,66 @@ def mnist_data():
 
     return x_train, y_train, x_test, y_test
 
-def test():
+def mnist_dcgan(): # {{{
+    batch_size = 500
+    epochs = 10
+
     def check():
-        # 60000 samples * 10 epochs / 100 batch size = 60000 training steps
-        # mod 600 indicates 10 outputs
-        if gan.training_step % 600:
-            return
-        gan.plot_images(noise=check_noise, save='tmp/%0d.png' % (gan.training_step), title=gan.fit_status())
+        if gan.training_step % gan.steps_per_output: return
+        gan.i_image += 1
+        print(gan.fit_status())
+        gan.plot_images(noise=check_noise, save='./mnist_dcgan/%02d.png' % (gan.i_image), title=gan.fit_status())
 
     gan = MNIST_DCGAN()
     check_noise = gan.noise(10)
-    gan.fit(x_train, batch_size=100, callback=check, epochs=10)
+    gan.i_image = 0
+    steps = 60000 * epochs / batch_size # sample size = 60000
+    gan.steps_per_output = steps / 10 # output 10 images
+    gan.fit(x_train, batch_size=batch_size, callback=check, epochs=epochs)
+    gan.D.save('./.prepared/mnist_dcgan.D.h5')
+    gan.G.save('./.prepared/mnist_dcgan.G.h5')
+    # }}}
+
+def mnist_gan(): # {{{
+    batch_size = 100
+    epochs = 40
+
+    def check():
+        if gan.training_step % gan.steps_per_output: return
+        gan.i_image += 1
+        print(gan.fit_status())
+        gan.plot_images(noise=check_noise, save='./mnist_gan/%02d.png' % (gan.i_image), title=gan.fit_status())
+
+    gan = GAN(28, 28, 1)
+    check_noise = gan.noise(10)
+    gan.i_image = 0
+    steps = 60000 * epochs / batch_size # sample size = 60000
+    gan.steps_per_output = steps / 10 # output 10 images
+    gan.fit(x_train, batch_size=batch_size, callback=check, epochs=epochs)
+    gan.D.save('./.prepared/mnist_gan.D.h5')
+    gan.G.save('./.prepared/mnist_gan.G.h5')
+    # }}}
+
+def test():
+    batch_size = 6000
+    epochs = 1
+
+    def check():
+        if gan.training_step % gan.steps_per_output: return
+        gan.i_image += 1
+        print(gan.fit_status())
+        gan.plot_images(noise=check_noise, save='./mnist_gan/%02d.png' % (gan.i_image), title=gan.fit_status())
+
+    gan = GAN(28, 28, 1)
+    check_noise = gan.noise(10)
+    gan.i_image = 0
+    steps = 60000 * epochs / batch_size # sample size = 60000
+    gan.steps_per_output = steps / 10 # output 10 images
+    gan.fit(x_train, batch_size=batch_size, callback=check, epochs=epochs)
 
 x_train, y_train, x_test, y_test = mnist_data()
 
 if __name__ == '__main__':
+    #mnist_gan()
+    #mnist_dcgan()
     test()
