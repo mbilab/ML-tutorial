@@ -3,16 +3,16 @@
 # see https://github.com/roatienza/Deep-Learning-Experiments/blob/master/Experiments/Tensorflow/GAN/dcgan_mnist.py
 
 # for `_tkinter.TclError: no display name and no $DISPLAY environment variable`
-#import matplotlib
-#matplotlib.use('Agg')
+import matplotlib
+matplotlib.use('Agg')
 
 from datetime import datetime
 import h5py
-from keras.layers import Activation, Dense, Flatten, Reshape
+from keras.layers import Activation, Dense, Flatten, Reshape, Input
 from keras.layers import BatchNormalization
-from keras.layers import Conv2D, Conv2DTranspose, UpSampling2D
+from keras.layers import Conv2D, Conv2DTranspose, UpSampling2D, concatenate
 from keras.layers import Dropout, LeakyReLU
-from keras.models import load_model, Sequential
+from keras.models import load_model, Sequential, Model
 from keras.optimizers import Adam, RMSprop
 from keras.utils import to_categorical
 from keras.utils.data_utils import get_file
@@ -189,6 +189,89 @@ class MNIST_DCGAN(GAN):
     def fit(self, *args, **kwargs):
         super(MNIST_DCGAN, self).fit(args[0].reshape(-1, 28, 28, 1), **kwargs)
 
+class CGAN(GAN):
+
+    def __init__(self, **kwargs):
+        super(CGAN, self).__init__(28, 28, 1, **kwargs)
+
+        self.noise_input = Input(shape = (self.noise_size,))
+        self.data_input = Input(shape = (784, ))
+        self.cond_input = Input(shape = (10, ))
+
+        self.d_out = self.discriminator_out(self.data_input, self.cond_input)
+        self.g_out = self.generator_out(self.noise_input, self.cond_input)
+        self.gan_out = self.discriminator_out(self.g_out, self.cond_input)
+
+        self.D = Model(inputs=[self.data_input, self.cond_input], outputs=self.d_out)
+        self.G = Model(inputs=[self.noise_input, self.cond_input], outputs=self.g_out)
+        self.DM = self.D
+        self.AM = Model(inputs=[self.noise_input, self.cond_input], outputs=self.gan_out)
+        self.build()
+
+
+    def discriminator_out(self, data, cond):
+        in1 = Dense(240, name='D_data')(data)
+        in1 = LeakyReLU()(in1)
+
+        in2 = Dense(50, name='D_cond')(cond)
+        in2 = LeakyReLU()(in2)
+
+        output = concatenate([in1, in2])
+        output = Dense(1, activation='sigmoid', name='D_output')(output)
+
+        return output
+
+    def generator_out(self, noise, cond):
+        in1 = Dense(200, name='G_noise')(noise)
+        in1 = LeakyReLU()(in1)
+
+        in2 = Dense(50, name='G_cond')(cond)
+        in2 = LeakyReLU()(in2)
+
+        output = concatenate([in1, in2])
+        output = Dense(512, name='G_output')(output)
+        output = LeakyReLU()(output)
+        output = Dense(512)(output)
+        output = LeakyReLU()(output)
+        output = Dense(512)(output)
+        output = LeakyReLU()(output)
+        output = Dense(784, activation='sigmoid')(output)
+
+        return output
+
+    def build(self):
+        optimizer1 = RMSprop(lr=0.0002, decay=6e-8)
+        self.DM.compile(loss='binary_crossentropy', metrics=['accuracy'], optimizer=optimizer1)
+
+        optimizer2 = RMSprop(lr=0.0001, decay=3e-8)
+        self.AM.compile(loss='binary_crossentropy', metrics=['accuracy'], optimizer=optimizer2)
+
+    def fit(self, x_train, batch_size=1000, callback=None, epochs=1000):
+        self.fit_start = datetime.now()
+        self.training_step = 0
+        for self.i_epoch in range(epochs):
+            shuffled_x, shuffled_y = shuffle(x_train, y_train)
+            for i_batch in range(0, len(x_train), batch_size):
+                self.training_step += 1
+
+                batch = shuffled_x[i_batch:i_batch+batch_size]
+                cond_y = shuffled_y[i_batch:i_batch+batch_size]
+                generated_batch = self.G.predict([self.noise(batch_size), cond_y])
+                x = np.concatenate((batch, generated_batch))
+                y = np.concatenate((np.ones(batch_size), np.zeros(batch_size)))
+                self.DM.trainable = True
+                self.d_loss = self.DM.train_on_batch([x, np.tile(cond_y, (2, 1))], y)
+
+                x = self.noise(batch_size)
+                y = np.ones([batch_size, 1])
+                self.DM.trainable = False
+                self.a_loss = self.AM.train_on_batch([x, cond_y], y)
+                #x = self.noise(batch_size)
+                #a_loss = self.AM.train_on_batch(x, y)
+                print(self.fit_status())
+                if callback: callback()
+
+
 def demo_dcgan():
     return load_model('./.prepared/mnist_dcgan.G.h5')
 
@@ -275,4 +358,6 @@ x_train, y_train, x_test, y_test = mnist_data()
 if __name__ == '__main__':
     #mnist_gan()
     #mnist_dcgan()
-    test()
+    #test()
+    a=CGAN()
+    print(a.DM.summary(), a.AM.summary())
