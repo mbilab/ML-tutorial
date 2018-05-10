@@ -5,6 +5,7 @@
 python3 -m venv ~/.virtualenvs/ml
 pip install --upgrade pip
 pip install gensim
+pip install graphviz
 pip install h5py
 pip install hyperopt
 pip install jieba
