@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
-#宣告 f 打開 hw2.csv
-f = open('hw2.csv', 'r')
+#宣告 f 打開 hw2.tsv
+f = open('hw2.tsv', 'r')
 
 #宣告 content 讀取 f 內容
 content = f.readlines()
