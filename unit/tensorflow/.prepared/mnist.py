@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
+
 import numpy as np
 import tensorflow as tf
 
 from tensorflow.examples.tutorials.mnist import input_data
 
-mnist = input_data.read_data_sets("MNIST_data/", one_hot=True)
+mnist = input_data.read_data_sets('../MNIST_data/', one_hot=True)
 
 x = tf.placeholder(tf.float32, shape = (None, 784))
 y = tf.placeholder(tf.float32, shape = (None, 10))
@@ -41,7 +42,7 @@ sess = tf.Session()
 sess.run(tf.global_variables_initializer())
 
 # 訓練 4000 次
-for i in range(1, 4001):
+for i in range(4000):
 
     # 每次訓練隨機選 200 筆資料放進神經網路
     x_batch, y_batch = mnist.train.next_batch(200)
@@ -49,8 +50,8 @@ for i in range(1, 4001):
 
     # 每訓練 100 次查看一次目前的 loss
     if i % 100 == 0:
-        print('Step %d training loss %.6f' % (i, sess.run(loss, feed_dict = {x: mnist.train.images, y: mnist.train.labels})))
+        print('Step %d training loss %.6f' % (i + 1, sess.run(loss, feed_dict = {x: mnist.train.images, y: mnist.train.labels})))
 
-# 查看訓練完後的神經網路的準確率
+# 查看神經網路訓練完後，在測試資料的準確率
 print('=================')
 print('Test accuracy: %.6f' % sess.run(accuracy, feed_dict = {x: mnist.test.images, y: mnist.test.labels}))
