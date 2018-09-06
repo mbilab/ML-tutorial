@@ -29,7 +29,7 @@ for line in lines:
     one_hot[int(fields[0])] = 1
 
     # 將 one_hot 放入 row_vector
-    row_vector.append(one_hot)
+    row_vector.extend(one_hot)
 
     # for 迴圈逐欄位處理:
     for field in fields[1:]:

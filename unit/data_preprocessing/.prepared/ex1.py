@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 # 開啟 ex1.csv，存入 f
-f = open('../hw1.csv', 'r')
+f = open('../ex1.csv', 'r')
 
 # 讀取 f 內容，存入 lines
 lines = f.readlines()
@@ -29,7 +29,7 @@ for line in lines:
     one_hot[int(fields[0])] = 1
 
     # 將 one_hot 放入 row_vector
-    row_vector.append(one_hot)
+    row_vector.extend(one_hot)
 
     # for 迴圈逐欄位處理:
     for field in fields[1:]:
