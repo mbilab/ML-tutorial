@@ -1,9 +1,12 @@
-import keras 
-import numpy as np
-from tensorflow.examples.tutorials.mnist import input_data
-from keras.models import Sequential
+#!/usr/bin/env python3
+
+import keras
 from keras.layers import Dense
+from keras.models import Sequential
+import numpy as np
 from sklearn.metrics import accuracy_score
+
+from tensorflow.examples.tutorials.mnist import input_data
 
 mnist = input_data.read_data_sets('MNIST_data/', one_hot=True)
 
