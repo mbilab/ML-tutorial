@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-def demo_pla():
+def demo():
     step = 0
     # y would be the first column after rolling
     x = np.roll(np.loadtxt('./pla.dat', np.float32), 1, axis=1)
@@ -59,7 +59,7 @@ def update():
 
 step = None
 w = None
-x = np.array([[1, 2], [2, 0], [0, 3], [2, 3], [1, 0], [-2, -2], [0, -1], [-1, 1], [-3, 1]], np.int32)   
+x = np.array([[1, 2], [2, 0], [0, 3], [2, 3], [1, 0], [-2, -2], [0, -1], [-1, 1], [-3, 1]], np.int32)
 y = np.array([1, 1, 1, 1, -1, -1, -1, -1, -1], np.int32)
 reset()
 
