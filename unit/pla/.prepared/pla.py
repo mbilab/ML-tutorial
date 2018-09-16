@@ -56,7 +56,6 @@ def update():
             step += 1
             w += _x * _y
             break
-    plot()
 
 step = None
 w = None
