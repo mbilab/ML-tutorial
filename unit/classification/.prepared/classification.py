@@ -1,4 +1,4 @@
-from IPython.display import Image 
+from IPython.display import Image
 import numpy
 from os import path
 from pydotplus import graph_from_dot_data
@@ -7,7 +7,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.tree import export_graphviz
 
-def classifier(X, y):
+def demo(X, y):
     clf = RandomForestClassifier(n_estimators=500, random_state=0)
     clf = clf.fit(X, y)
     return clf
@@ -30,8 +30,8 @@ def german_credit_data():
             ) + [feature_names]
 
 def plot(clf):
-    dot_data = export_graphviz(clf, class_names=['not worthy', 'worthy'], feature_names=feature_names, filled=True, out_file=None) 
-    graph = graph_from_dot_data(dot_data) 
+    dot_data = export_graphviz(clf, class_names=['not worthy', 'worthy'], feature_names=feature_names, filled=True, out_file=None)
+    graph = graph_from_dot_data(dot_data)
     display(Image(graph.create_png()))
 
 X_train, X_test, y_train, y_test, feature_names = german_credit_data()
