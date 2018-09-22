@@ -34,7 +34,7 @@ def plot(clf):
     graph = graph_from_dot_data(dot_data)
     display(Image(graph.create_png()))
 
-X_train, X_test, y_train, y_test, feature_names = german_credit_data()
+x_train, x_test, y_train, y_test, feature_names = german_credit_data()
 
 if '__main__' == __name__:
     pass
