@@ -2,6 +2,7 @@
 
 ## setup
 
+```
 python3 -m venv ~/.virtualenvs/ml
 pip install --upgrade pip
 pip install gensim
@@ -26,7 +27,10 @@ pip install tqdm
 pip install xgboost
 
 brew install graphviz
+```
 
 # run
 
+```
 jupyter notebook --ip=[ip]
+```

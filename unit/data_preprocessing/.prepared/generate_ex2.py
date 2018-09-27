@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+
 import numpy as np
 from random import randint
 
@@ -7,10 +8,10 @@ def apply_zero(array):
     mask = np.random.randint(0, 49, size = array.shape) == 0
     array[mask] = np.zeros(array.shape)[mask]
 
-if __name__ == '__main__':
+if '__main__' == __name__:
 
     num_sample = 10000
-    file_name = 'hw2.csv'
+    file_name = 'ex2.txt'
     delimiter = '\t'
     use_missing_value = True
     num_label = 23
@@ -29,7 +30,6 @@ if __name__ == '__main__':
     label = np.reshape(np.array([randint(0, num_label - 1) for _ in range(num_sample)]), [num_sample, 1])
 
     data = np.concatenate([label, data], axis = 1)
-
 
     with open(file_name, 'w') as f:
 
