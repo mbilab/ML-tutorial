@@ -1,2 +1,2 @@
-#!/usr/bin/env sh
-juypter notebook
+#!/usr/bin/env sh -x
+jupyter notebook
