@@ -36,7 +36,11 @@ def demo():
     y_pred[y_pred >= thr] = 1
     y_pred[y_pred < thr] = 0
 
-    print("TA's Test Accuracy: {:.3f}".format(accuracy_score(test_Y, y_pred)))
+    return y_pred
+
+def evaluate(y_true, y_pred):
+    print("Test Accuracy: {:.3f}".format(accuracy_score(y_true, y_pred)))
+
 
 if '__main__' == __name__:
     demo()
