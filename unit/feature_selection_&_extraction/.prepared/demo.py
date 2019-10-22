@@ -1,7 +1,11 @@
 #!usr/bin/env python3
+
+
+# third-party imports
 import numpy as np
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import cross_val_score
+
 
 def select_by_test_accuracy(clf, tr_x, tr_y, te_x, te_y, remain_num):
     n_features = tr_x.shape[1]
@@ -17,8 +21,8 @@ def select_by_test_accuracy(clf, tr_x, tr_y, te_x, te_y, remain_num):
         tr_x = np.delete(tr_x, np.argmax(acc), 1)
         te_x = np.delete(te_x, np.argmax(acc), 1)
 
-    print('train_x shape:', tr_x.shape)
-    print('remain feature index:', idx)
+    print('Remain features:', idx)
+
 
 def select_by_cv(clf, tr_x, tr_y, remain_num):
     n_features = tr_x.shape[1]
@@ -32,8 +36,8 @@ def select_by_cv(clf, tr_x, tr_y, remain_num):
         idx = np.delete(idx, np.argmax(acc))
         tr_x = np.delete(tr_x, np.argmax(acc), 1)
 
-    print('train_x shape:', tr_x.shape)
-    print('remain feature index:', idx)
+    print('Remain features:', idx)
+
 
 if __name__ == '__main__':
     pass
