@@ -106,7 +106,9 @@ def get_category_data(path, box, label, cat_type, drop_non_defective=False, resi
 def HOG_ANOVA_SVM(file_prefix, defective_type, anova_percentile=50, slice_img=False, linear_svm=False):
     '''
     Description:
-        Build a 
+        > Build a image classification model. 
+        > We use HOG to extract image features, ANOVA for feature selection, and SVM for classification.
+        > Please note that since this is a multi-label task, each type of defective requires a binary classification model. 
 
     Args:
         file_prefix: Any file name you want.
