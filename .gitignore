@@ -4,3 +4,4 @@ gan/good_output
 .ipynb_checkpoints/
 __pycache__/
 unit/nlp/.nltk_data/
+.venv
